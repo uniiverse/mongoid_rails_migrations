@@ -1,4 +1,5 @@
 # encoding: utf-8
+require 'benchmark'
 
 module Mongoid #:nodoc
   # Exception that can be raised to stop migrations from going backwards.
