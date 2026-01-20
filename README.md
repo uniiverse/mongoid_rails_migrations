@@ -98,7 +98,12 @@ Global migrations can still be created with the `--no-shards` option.
 
 ## Unreleased
 
-[Compare master with 1.6.1](https://github.com/adacosta/mongoid_rails_migrations/compare/v1.6.1...master)
+[Compare master with 1.6.2](https://github.com/adacosta/mongoid_rails_migrations/compare/v1.6.2...master)
+
+## 1.6.2
+_20/01/2026_
+* Include Benchmark dependency dropped by ActiveSupport 8.1 (#63)
+* Add Rails 8 / Mongoid 9 and Ruby 3.4 to the test suite (#63)
 
 ## 1.6.1
 _19/11/2024_

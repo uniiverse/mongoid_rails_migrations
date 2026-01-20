@@ -4,38 +4,35 @@ on: [push, pull_request]
 jobs:
   tests:
     runs-on: ubuntu-latest
-    timeout-minutes: 2
+    timeout-minutes: 3 # jruby install takes time
     strategy:
       fail-fast: false
       matrix:
-        ruby_version: ['2.7', '3.0', '3.1', '3.2', '3.3', '3.4', 'jruby']
+        ruby_version: ['3.2', '3.3', '3.4', 'jruby']
         gemfile:
-          - rails6-mongoid7
           - rails7-mongoid8
           - rails7-mongoid9
+          - rails8-mongoid9
+          - rails-edge
         include:
           - ruby_version: '2.4'
             gemfile: rails5-mongoid6
           - ruby_version: '2.5'
             gemfile: rails5-mongoid7
-          - ruby_version: '3.2'
-            gemfile: rails8-mongoid9
-          - ruby_version: '3.3'
-            gemfile: rails8-mongoid9
-          - ruby_version: '3.3'
-            gemfile: rails-edge
-          - ruby_version: '3.4'
-            gemfile: rails-edge
+          - ruby_version: '2.7'
+            gemfile: rails6-mongoid7
+          - ruby_version: '3.0'
+            gemfile: rails7-mongoid8
+          - ruby_version: '3.1'
+            gemfile: rails7-mongoid9
         exclude:
           - ruby_version: 'jruby'
             gemfile: rails7-mongoid8 # JRuby 9.4.8 with Mongoid 8 has trouble finding the Logger::INFO constant
-          - ruby_version: '3.4'
-            gemfile: rails6-mongoid7 # Ruby 3.4 removed a number of standard libraries needed by Rails 6, which is EoL
 
     env:
       BUNDLE_GEMFILE: ${{ github.workspace }}/gemfiles/${{ matrix.gemfile }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - uses: ruby/setup-ruby@v1
         with:
