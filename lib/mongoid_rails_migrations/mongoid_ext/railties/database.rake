@@ -1,12 +1,37 @@
-namespace :db do
-  if Rake::Task.task_defined?("db:drop")
-    Rake::Task["db:drop"].clear
+namespace :mongoid do
+  unless Rake::Task.task_defined?("mongoid:drop")
+    desc 'Drops all the collections for the database for the current Rails.env'
+    task :drop => :environment do
+      # Mongoid 7: Mongoid.master was removed; drop non-system collections via the default client.
+      Mongoid::Migration.connection.database.collections.each do |col|
+        col.drop unless col.name.start_with?('system.')
+      end
+    end
   end
 
-  desc 'Drops the database for the current Mongoid client'
-  task :drop => :environment do
-    # Unlike Mongoid's default, this implementation supports the MONGOID_CLIENT_NAME override
-    Mongoid::Migration.connection.database.drop
+  unless Rake::Task.task_defined?("mongoid:seed")
+    # if another ORM has defined mongoid:seed, don't run it twice.
+    desc 'Load the seed data from db/seeds.rb'
+    task :seed => :environment do
+      seed_file = File.join(Rails.application.root, 'db', 'seeds.rb')
+      load(seed_file) if File.exist?(seed_file)
+    end
+  end
+
+  unless Rake::Task.task_defined?("mongoid:setup")
+    desc 'Create the database, and initialize with the seed data'
+    task :setup => [ 'mongoid:create', 'mongoid:seed' ]
+  end
+
+  unless Rake::Task.task_defined?("mongoid:reseed")
+    desc 'Delete data and seed'
+    task :reseed => [ 'mongoid:drop', 'mongoid:seed' ]
+  end
+
+  unless Rake::Task.task_defined?("mongoid:create")
+    task :create => :environment do
+      # noop
+    end
   end
 
   desc 'Current database version'
@@ -14,7 +39,7 @@ namespace :db do
     puts Mongoid::Migrator.current_version.to_s
   end
 
-  desc "Migrate the database through scripts in db/migrate. Target specific version with VERSION=x. Turn off output with VERBOSE=false."
+  desc "Migrate the database through scripts in db/mongoid/migrate. Target specific version with VERSION=x. Turn off output with VERBOSE=false."
   task :migrate => :environment do
     Mongoid::Migration.verbose = ENV["VERBOSE"] ? ENV["VERBOSE"] == "true" : true
     Mongoid::Migrator.migrate(Mongoid::Migrator.migrations_path, ENV["VERSION"] ? ENV["VERSION"].to_i : nil)
@@ -24,17 +49,16 @@ namespace :db do
     desc 'Rollback the database one migration and re migrate up. If you want to rollback more than one step, define STEP=x. Target specific version with VERSION=x.'
     task :redo => :environment do
       if ENV["VERSION"]
-        Rake::Task["db:migrate:down"].invoke
-        Rake::Task["db:migrate:up"].invoke
+        Rake::Task["mongoid:migrate:down"].invoke
+        Rake::Task["mongoid:migrate:up"].invoke
       else
-        Rake::Task["db:rollback"].invoke
-        Rake::Task["db:migrate"].invoke
+        Rake::Task["mongoid:rollback"].invoke
+        Rake::Task["mongoid:migrate"].invoke
       end
     end
 
     desc 'Resets your database using your migrations for the current environment'
-    # should db:create be changed to db:setup? It makes more sense wanting to seed
-    task :reset => ["db:drop", "db:create", "db:migrate"]
+    task :reset => ["mongoid:drop", "mongoid:create", "mongoid:migrate"]
 
     desc 'Runs the "up" for a given migration VERSION.'
     task :up => :environment do
@@ -67,5 +91,17 @@ namespace :db do
     version = ENV["VERSION"] ? ENV["VERSION"].to_i : nil
     raise "VERSION is required" unless version
     Mongoid::Migrator.rollback_to(Mongoid::Migrator.migrations_path, version)
+  end
+
+  namespace :schema do
+    task :load do
+      # noop
+    end
+  end
+
+  namespace :test do
+    task :prepare do
+      # Stub out for MongoDB
+    end
   end
 end

@@ -229,7 +229,9 @@ module Mongoid #:nodoc
       end
 
       def migrations_path
-        @migrations_path ||= ['db/migrate']
+        # uniiverse fork: default to the dedicated Mongoid path, kept separate from the
+        # ActiveRecord migrations in db/migrate (still overridable, e.g. in tests).
+        @migrations_path ||= ['db/mongoid/migrate']
       end
 
       def get_all_versions
